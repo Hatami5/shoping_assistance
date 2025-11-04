@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SageMind Tech Services | AI Shopping Assistant</title>
+    <!-- Load Tailwind CSS for modern, mobile-friendly styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for branding and readability */
+        :root {
+            --sm-blue: #1E40AF; /* Darker Blue */
+            --sm-light: #60A5FA; /* Lighter Blue */
+            --sm-gray: #F3F4F6;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--sm-gray);
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .sm-gradient {
+            background-image: linear-gradient(to right, var(--sm-blue), var(--sm-light));
+        }
+        .chat-container {
+            height: 350px;
+            overflow-y: auto;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #F9FAFB;
+        }
+        .user-message {
+            background-color: #DBEAFE; /* Light Blue background for user */
+            color: #1E40AF;
+            border-radius: 10px 10px 0 10px;
+            max-width: 80%;
+            margin-left: auto;
+            padding: 8px 12px;
+        }
+        .ai-message {
+            background-color: #E5E7EB; /* Light Gray background for AI */
+            color: #374151;
+            border-radius: 10px 10px 10px 0;
+            max-width: 80%;
+            margin-right: auto;
+            padding: 8px 12px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-white text-xl p-4 rounded-lg bg-blue-600">
+            Processing... Please wait.
+        </div>
+    </div>
+
+    <!-- Header and Branding -->
+    <header class="mb-8">
+        <h1 class="text-4xl font-extrabold sm-gradient bg-clip-text text-transparent">
+            SageMind Tech Services
+        </h1>
+        <p class="text-xl text-gray-600 mt-1">AI Shopping Assistant Dashboard</p>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Column 1: Product Tracking & Alerts -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Product Tracking Form -->
+            <div id="product-form-card" class="card p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Track New Product</h2>
+                <form id="product-form" class="space-y-4">
+                    <input type="url" id="product-url" placeholder="Product URL (e.g., https://store.com/item)" required
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <input type="text" id="product-name" placeholder="Product Name (Optional)"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <input type="text" id="product-store" placeholder="Store Name (e.g., Amazon, BestBuy)"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <button type="submit" class="w-full sm-gradient text-white p-3 rounded-lg font-bold hover:opacity-90 transition-opacity">
+                        Start Tracking & Get Embedding
+                    </button>
+                    <p id="product-message" class="text-sm text-center font-medium"></p>
+                </form>
+            </div>
+
+            <!-- Price Alert Form -->
+            <div id="alert-form-card" class="card p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Set Price Alert</h2>
+                <form id="alert-form" class="space-y-4">
+                    <select id="alert-product-id" required 
+                            class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-sm-blue focus:border-sm-blue">
+                        <option value="" disabled selected>Select a Tracked Product</option>
+                    </select>
+                    <input type="email" id="alert-email" placeholder="Your Email for Notifications" required
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <input type="number" id="alert-target-price" placeholder="Target Price (e.g., 99.99)" required step="0.01" min="0.01"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <button type="submit" class="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition-colors">
+                        Set Alert
+                    </button>
+                    <p id="alert-message" class="text-sm text-center font-medium"></p>
+                </form>
+            </div>
+
+            <!-- Product List Display -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Currently Tracked Products</h2>
+                <div id="product-list" class="space-y-4">
+                    <p class="text-gray-500 text-center" id="no-products">No products are being tracked yet. Use the form above!</p>
+                    <!-- Product Cards will be injected here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Column 2: AI Chatbot -->
+        <div class="lg:col-span-1">
+            <div class="card p-6 sticky top-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">SageMind AI Chatbot</h2>
+                
+                <div id="chat-messages" class="chat-container mb-4 flex flex-col space-y-3">
+                    <div class="ai-message self-start">
+                        Hello! I'm your SageMind AI Assistant. Ask me anything about shopping, product recommendations, or pricing!
+                    </div>
+                </div>
+
+                <form id="chat-form" class="flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Ask your question..." required
+                           class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-sm-blue focus:border-sm-blue">
+                    <button type="submit" id="chat-submit-btn" class="sm-gradient text-white p-3 rounded-lg font-bold w-1/4 flex-shrink-0 hover:opacity-90 transition-opacity">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+        const productForm = document.getElementById('product-form');
+        const productMessage = document.getElementById('product-message');
+        const alertForm = document.getElementById('alert-form');
+        const alertMessage = document.getElementById('alert-message');
+        const alertProductIdSelect = document.getElementById('alert-product-id');
+        const productListDiv = document.getElementById('product-list');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        let products = []; // Cache for tracked products
+
+        // --- Utility Functions ---
+
+        function showMessage(element, text, isError = false) {
+            element.textContent = text;
+            element.className = isError 
+                ? 'text-sm text-red-600 font-semibold text-center mt-2' 
+                : 'text-sm text-green-600 font-semibold text-center mt-2';
+            setTimeout(() => { element.textContent = ''; }, 5000);
+        }
+
+        function toggleLoading(show) {
+            loadingOverlay.classList.toggle('hidden', !show);
+            document.getElementById('chat-submit-btn').disabled = show;
+        }
+
+        // --- Product Display and Management ---
+
+        function renderProductList() {
+            productListDiv.innerHTML = '';
+            alertProductIdSelect.innerHTML = '<option value="" disabled selected>Select a Tracked Product</option>';
+
+            if (products.length === 0) {
+                productListDiv.innerHTML = '<p class="text-gray-500 text-center">No products are being tracked yet. Use the form above!</p>';
+                return;
+            }
+
+            products.forEach(p => {
+                // 1. Render Product Card
+                const card = document.createElement('div');
+                card.className = 'p-4 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow';
+                card.innerHTML = `
+                    <p class="text-lg font-semibold text-sm-blue">${p.name}</p>
+                    <p class="text-gray-600 text-sm mb-1">${p.store}</p>
+                    <p class="text-sm">
+                        <span class="font-bold">${p.current_price ? `$${p.current_price.toFixed(2)}` : 'Price: N/A'}</span> 
+                        <span class="text-gray-500 ml-2">(${p.last_scraped ? new Date(p.last_scraped).toLocaleDateString() : 'Never Scraped'})</span>
+                    </p>
+                    <a href="${p.url}" target="_blank" class="text-xs text-blue-500 hover:underline">View Product</a>
+                `;
+                productListDiv.appendChild(card);
+
+                // 2. Populate Alert Select
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = `${p.name} - ${p.store}`;
+                alertProductIdSelect.appendChild(option);
+            });
+        }
+
+        async function fetchProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/`);
+                if (!response.ok) throw new Error('Failed to fetch products');
+                products = await response.json();
+                renderProductList();
+            } catch (error) {
+                console.error("Error fetching products:", error);
+                showMessage(productListDiv, 'Could not load products. Check server status.', true);
+            }
+        }
+
+        // --- Event Handlers ---
+
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+
+            const url = document.getElementById('product-url').value;
+            const name = document.getElementById('product-name').value;
+            const store = document.getElementById('product-store').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        url: url, 
+                        name: name || 'New Product', 
+                        store: store || 'Unknown Store' 
+                    })
+                });
+
+                if (response.status === 400) {
+                    const data = await response.json();
+                    showMessage(productMessage, `Error: ${data.detail}`, true);
+                } else if (!response.ok) {
+                    throw new Error('Server error during product creation.');
+                } else {
+                    showMessage(productMessage, 'Product added! Price embedding created. Worker will scrape price soon.', false);
+                    productForm.reset();
+                    await fetchProducts(); // Refresh list
+                }
+            } catch (error) {
+                console.error("Product creation error:", error);
+                showMessage(productMessage, `Failed to add product: ${error.message}`, true);
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        alertForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+
+            const product_id = parseInt(document.getElementById('alert-product-id').value);
+            const user_email = document.getElementById('alert-email').value;
+            const target_price = parseFloat(document.getElementById('alert-target-price').value);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/alerts/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        product_id, 
+                        user_email, 
+                        target_price 
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Server error during alert creation.');
+                } else {
+                    showMessage(alertMessage, 'Price Alert set successfully! You will be emailed when the price drops.', false);
+                    alertForm.reset();
+                }
+            } catch (error) {
+                console.error("Alert creation error:", error);
+                showMessage(alertMessage, `Failed to set alert: ${error.message}`, true);
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        // --- Chatbot Logic ---
+
+        function addChatMessage(text, role) {
+            const container = document.createElement('div');
+            container.className = `w-full flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const message = document.createElement('div');
+            message.className = role === 'user' ? 'user-message' : 'ai-message';
+            message.textContent = text;
+            
+            container.appendChild(message);
+            chatMessages.appendChild(container);
+
+            // Scroll to the bottom of the chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const prompt = chatInput.value.trim();
+            if (!prompt) return;
+
+            addChatMessage(prompt, 'user');
+            chatInput.value = '';
+            chatInput.disabled = true;
+            document.getElementById('chat-submit-btn').disabled = true;
+            
+            addChatMessage("AI is thinking...", 'ai');
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll down
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chatbot/ask`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) throw new Error('Server returned error.');
+                
+                const aiResponse = await response.text();
+                
+                // Replace "AI is thinking..." with the actual response
+                chatMessages.lastChild.querySelector('.ai-message').textContent = aiResponse;
+
+            } catch (error) {
+                console.error("Chatbot error:", error);
+                chatMessages.lastChild.querySelector('.ai-message').textContent = `Error: Could not connect to chatbot. (${error.message})`;
+            } finally {
+                chatInput.disabled = false;
+                document.getElementById('chat-submit-btn').disabled = false;
+                chatInput.focus();
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+
+
+        // --- Initialization ---
+        window.onload = () => {
+            fetchProducts();
+            // Optional: Set up an interval to refresh products automatically every 60 seconds
+            setInterval(fetchProducts, 60000); 
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+
+#Core Frameworks
+
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pydantic==2.8.2
+
+#Database 
+ORM
+sqlalchemy==2.0.31
+#sqlite-sync==0.2.1
+sqlite-sync
+
+AI
+NLP
+sentence-transformers==2.7.0
+transformers==4.42.3
+torch==2.3.1
+#scikit-learn==1.5.0
+scikit-learn
+#Web 
+Scraping
+httpx==0.27.0
+beautifulsoup4==4.12.3
+html5lib==1.1
+
+Utility 
+Services
+python-dotenv==1.0.1
+loguru==0.7.2
+email-validator==2.1.1 # REQUIRED for Pydantic EmailStr validation
+jinja2==3.1.4 # REQUIRED for HTML templates
+python-multipart==0.0.9 # Required for form data/file uploads (good practice)
